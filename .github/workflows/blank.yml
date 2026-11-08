@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Keys</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
+    color: #fff;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+
+  h1 {
+    margin-bottom: 25px;
+    font-size: 1.6rem;
+    color: #00e0ff;
+    text-shadow: 0 0 10px rgba(0, 224, 255, 0.5);
+  }
+
+  .key-box {
+    background: #0f0f1a;
+    border: 2px solid #00e0ff55;
+    border-radius: 12px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+    word-break: break-all;
+    color: #00ff9d;
+    margin-bottom: 20px;
+    min-height: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+  }
+
+  .key-box.copied {
+    border-color: #00ff9d;
+    box-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
+  }
+
+  .options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .options label {
+    font-size: 0.85rem;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    flex: 1;
+    min-width: 140px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.25s;
+  }
+
+  #generateBtn {
+    background: linear-gradient(135deg, #00e0ff, #0077ff);
+    color: #fff;
+  }
+
+  #generateBtn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 140, 255, 0.5);
+  }
+
+  #copyBtn {
+    background: transparent;
+    border: 2px solid #00ff9d;
+    color: #00ff9d;
+  }
+
+  #copyBtn:hover {
+    background: #00ff9d;
+    color: #0f0f1a;
+  }
+
+  .history {
+    margin-top: 25px;
+    text-align: left;
+  }
+
+  .history h2 {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .history ul {
+    list-style: none;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .history li {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #00e0ff;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .history li:hover {
+    background: rgba(0, 224, 255, 0.15);
+  }
+
+  .history ul::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .history ul::-webkit-scrollbar-thumb {
+    background: #00e0ff55;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🔑 Gerador de Keys</h1>
+
+  <div class="key-box" id="keyBox">Clique em Gerar</div>
+
+  <div class="options">
+    <label>
+      <input type="checkbox" id="useUpper" checked> Maiúsculas
+    </label>
+    <label>
+      <input type="checkbox" id="useNumbers" checked> Números
+    </label>
+    <label>
+      <input type="checkbox" id="useSymbols"> Símbolos
+    </label>
+  </div>
+
+  <div class="buttons">
+    <button id="generateBtn">Gerar Key</button>
+    <button id="copyBtn">Copiar</button>
+  </div>
+
+  <div class="history">
+    <h2>Histórico</h2>
+    <ul id="historyList"></ul>
+  </div>
+</div>
+
+<script>
+  const keyBox = document.getElementById('keyBox');
+  const generateBtn = document.getElementById('generateBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const historyList = document.getElementById('historyList');
+
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const symbols = '!@#$%^&*-_=+';
+
+  const keyLength = 4;      // caracteres por bloco
+  const blocks = 4;         // quantidade de blocos
+
+  function generateKey() {
+    let chars = lower;
+
+    if (document.getElementById('useUpper').checked) chars += upper;
+    if (document.getElementById('useNumbers').checked) chars += numbers;
+    if (document.getElementById('useSymbols').checked) chars += symbols;
+
+    const parts = [];
+
+    for (let b = 0; b < blocks; b++) {
+      let part = '';
+      for (let i = 0; i < keyLength; i++) {
+        part += chars[Math.floor(Math.random() * chars.length)];
+      }
+      parts.push(part);
+    }
+
+    return parts.join('-');
+  }
+
+  function addToHistory(key) {
+    const li = document.createElement('li');
+    li.textContent = key;
+    li.title = 'Clique para copiar';
+    li.addEventListener('click', () => {
+      navigator.clipboard.writeText(key);
+      li.textContent = '✓ Copiado!';
+      setTimeout(() => li.textContent = key, 1000);
+    });
+    historyList.prepend(li);
+
+    // Limita o histórico a 10 itens
+    while (historyList.children.length > 10) {
+      historyList.removeChild(historyList.lastChild);
+    }
+  }
+
+  generateBtn.addEventListener('click', () => {
+    const key = generateKey();
+    keyBox.textContent = key;
+    keyBox.classList.remove('copied');
+    addToHistory(key);
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const text = keyBox.textContent.trim();
+    if (!text || text === 'Clique em Gerar') return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      keyBox.classList.add('copied');
+      const original = copyBtn.textContent;
+      copyBtn.textContent = '✓ Copiado!';
+      setTimeout(() => {
+        keyBox.classList.remove('copied');
+        copyBtn.textContent = original;
+      }, 1200);
+    });
+  });
+</script>
+
+</body>
+</html>
